@@ -18,19 +18,23 @@ public class NeuralNetwork {
 	
 	public RealMatrix[] calculateCorrections(RealVector input, RealVector errors) {
 		RealMatrix[] corrections = new RealMatrix[layers.length];
-		RealVector inputForCurrentLayer = getOutputOfLayer(input, layers.length - 1);
+		RealVector errorsForPreviousLayer = null;
 		
-		corrections[layers.length - 1] = layers[layers.length - 1].calculateCorrections(inputForCurrentLayer, errors);
-		RealVector errorsForPreviousLayer = concentrateWeightCorrection(corrections[layers.length - 1],
-		                                                                layers[layers.length - 1].getProperties());
+		if (layers.length > 1) {
+		    RealVector inputForCurrentLayer = getOutputOfLayer(input, layers.length - 1);
+    		corrections[layers.length - 1] = layers[layers.length - 1].calculateCorrections(inputForCurrentLayer, errors);
+    		errorsForPreviousLayer = layers[layers.length - 1].calculateErrorsForPreviousLayer(inputForCurrentLayer, errors);
+    		
+    		for (int i = layers.length - 2; i > 0; i--) {
+    			inputForCurrentLayer = getOutputOfLayer(input, i);
+    			corrections[i] = layers[i].calculateCorrections(inputForCurrentLayer, errorsForPreviousLayer);
+    			
+    			errorsForPreviousLayer = layers[i].calculateErrorsForPreviousLayer(inputForCurrentLayer, errorsForPreviousLayer);
+    		}
+		}
 		
-		for (int i = layers.length - 2; i > 0; i--) {
-			inputForCurrentLayer = getOutputOfLayer(input, i);
-			corrections[i] = layers[i].calculateCorrections(inputForCurrentLayer, errorsForPreviousLayer);
-			
-			//RealVector weightCorrections = concentrateWeightCorrection(corrections[i], layers[i].getProperties());
-			//errorsForPreviousLayer = layers[i].calculateErrorsForPreviousLayer(weightCorrections);
-			errorsForPreviousLayer = concentrateWeightCorrection(corrections[i], layers[i].getProperties());
+		if (errorsForPreviousLayer == null) {
+		    errorsForPreviousLayer = errors;
 		}
 		corrections[0] = layers[0].calculateCorrections(input, errorsForPreviousLayer);
 		
@@ -71,17 +75,5 @@ public class NeuralNetwork {
 		}
 		
 		return output;
-	}
-	
-	private RealVector concentrateWeightCorrection(RealMatrix corrections, NeuralLayerProperties properties) {
-	    RealMatrix weightCorrections = corrections.getSubMatrix(0,  properties.getNeuronCount() - 1,
-                                                                0, properties.getInputCount() - 1);
-	    
-	    RealVector concentratedCorrections = weightCorrections.getRowVector(0);
-	    for (int i = 1; i < weightCorrections.getRowDimension(); i++) {
-	        concentratedCorrections = concentratedCorrections.add(weightCorrections.getRowVector(i));
-	    }
-	    
-	    return concentratedCorrections;
 	}
 }

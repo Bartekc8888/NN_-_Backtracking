@@ -20,6 +20,7 @@ public class NeuralManager {
 	
 	public RealMatrix[] learn(List<DataContainer> data, int epochLimit, double errorLimit) {
 		List<DataContainer> dataCopy = new ArrayList<DataContainer>(data);
+		double errorAfterEpoch = 0;
 		
 		int currentEpoch = 0;
 		while (currentEpoch < epochLimit) {
@@ -36,12 +37,11 @@ public class NeuralManager {
 				if (dataBit.getTarget() != null) {
 					//RealVector errorVector = outputVector.subtract(dataBit.getTarget()); // TODO 1/2 * error^2 ? 
 				    RealVector errorVector = outputVector.subtract(dataBit.getTarget());
-				    errorVector = errorVector.ebeMultiply(errorVector);
-				    errorVector = errorVector.mapDivide(2);
-					//errorAccumulator = errorAccumulator.add(errorVector);
-					errorAccumulator += errorVector.getL1Norm();
-					
 					RealMatrix[] corrections = network.calculateCorrections(dataBit.getData(), errorVector);
+					
+					errorVector = errorVector.ebeMultiply(errorVector);
+                    errorVector = errorVector.mapDivide(2);
+                    errorAccumulator += errorVector.getL1Norm();
 					
 					if (corrections.length == correctionsAccumulator.length) {
 						for (int i = 0; i < correctionsAccumulator.length; i++) {
@@ -56,8 +56,9 @@ public class NeuralManager {
 					}
 				}
 			}
-			
-            double errorAfterEpoch = errorAccumulator / dataCopy.size(); // divide to get average error on all samples
+
+            errorAfterEpoch = errorAccumulator / dataCopy.size(); // divide to get average error on all samples
+            System.out.println(errorAfterEpoch);
             if (errorAfterEpoch < errorLimit) {
                 return network.getNetworkParameters();
             }
@@ -67,7 +68,7 @@ public class NeuralManager {
             }
             
             network.applyCorrections(correctionsAccumulator);
-            
+
 			currentEpoch++;
 		}
 		
