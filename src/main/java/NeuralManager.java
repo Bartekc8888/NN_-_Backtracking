@@ -15,7 +15,7 @@ public class NeuralManager {
 	}
 	
 	public void initWeights(RealMatrix[] parameters) { // use this to setup parameters learned earlier
-		
+		//TODO
 	}
 	
 	public RealMatrix[] learn(List<DataContainer> data, int epochLimit, double errorLimit) {
@@ -26,7 +26,6 @@ public class NeuralManager {
 		while (currentEpoch < epochLimit) {
 			Collections.shuffle(dataCopy);
 			RealMatrix[] correctionsAccumulator = new RealMatrix[network.getLayerCount()];
-			//RealVector errorAccumulator = new ArrayRealVector(data.get(0).getTarget().getDimension(), 0); // its size equals to count of output nodes
 			double errorAccumulator = 0;
 			RealVector outputVector;
 			
@@ -35,8 +34,7 @@ public class NeuralManager {
 				
 				
 				if (dataBit.getTarget() != null) {
-					//RealVector errorVector = outputVector.subtract(dataBit.getTarget()); // TODO 1/2 * error^2 ? 
-				    RealVector errorVector = outputVector.subtract(dataBit.getTarget());
+				    RealVector errorVector = dataBit.getTarget().subtract(outputVector);
 					RealMatrix[] corrections = network.calculateCorrections(dataBit.getData(), errorVector);
 					
 					errorVector = errorVector.ebeMultiply(errorVector);
@@ -77,11 +75,12 @@ public class NeuralManager {
 	
 	public RealVector[] processData(List<DataContainer> data) {
 		RealVector[] output = new RealVector[data.size()];
-		
+		//TODO
 		return output;
 	}
 	
 	public void calculateErrorOverDataRange(List<DataContainer> data) {
-		
+	    // calculating error on test data
+		//TODO
 	}
 }

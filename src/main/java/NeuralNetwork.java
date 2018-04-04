@@ -23,13 +23,13 @@ public class NeuralNetwork {
 		if (layers.length > 1) {
 		    RealVector inputForCurrentLayer = getOutputOfLayer(input, layers.length - 1);
     		corrections[layers.length - 1] = layers[layers.length - 1].calculateCorrections(inputForCurrentLayer, errors);
-    		errorsForPreviousLayer = layers[layers.length - 1].calculateErrorsForPreviousLayer(inputForCurrentLayer, errors);
+    		errorsForPreviousLayer = layers[layers.length - 1].calculateErrorsForPreviousLayer(errors);
     		
     		for (int i = layers.length - 2; i > 0; i--) {
     			inputForCurrentLayer = getOutputOfLayer(input, i);
     			corrections[i] = layers[i].calculateCorrections(inputForCurrentLayer, errorsForPreviousLayer);
     			
-    			errorsForPreviousLayer = layers[i].calculateErrorsForPreviousLayer(inputForCurrentLayer, errorsForPreviousLayer);
+    			errorsForPreviousLayer = layers[i].calculateErrorsForPreviousLayer(errorsForPreviousLayer);
     		}
 		}
 		

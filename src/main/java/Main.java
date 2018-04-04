@@ -12,12 +12,12 @@ public class Main {
 			List<DataContainer> data = loader.getLoadedData();
 			
 			NeuralLayerProperties[] networkProperties = new NeuralLayerProperties[2];
-			networkProperties[0] = new NeuralLayerProperties(4, 4, 0.05, 0.2, new SigmoidFunction());
-			networkProperties[1] = new NeuralLayerProperties(4, 3, 0.05, 0.2, new SigmoidFunction());
+			networkProperties[0] = new NeuralLayerProperties(4, 4, 0.2, 0.2, new SigmoidFunction());
+			networkProperties[1] = new NeuralLayerProperties(4, 3, 0.2, 0.2, new SigmoidFunction());
 			
 			NeuralManager manager = new NeuralManager(networkProperties);
 			
-			RealMatrix[] LearnedParameters = manager.learn(data, 500_000, 0.1);
+			RealMatrix[] LearnedParameters = manager.learn(data, 500_000, 0.01);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

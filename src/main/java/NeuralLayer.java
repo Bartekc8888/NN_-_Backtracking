@@ -36,13 +36,15 @@ public class NeuralLayer {
 		RealMatrix corrections = new Array2DRowRealMatrix(layerProperties.getNeuronCount(),
 		                                                  layerProperties.getInputCount() + 1);
 		
+		RealMatrix correctionsForWeights = new Array2DRowRealMatrix(layerProperties.getNeuronCount(),
+                                                                    layerProperties.getInputCount());
+		
 		for (int i = 0; i < layerProperties.getNeuronCount(); i++) {
-		    RealVector rowOfCorrections = new ArrayRealVector(layerProperties.getInputCount() + 1);
-		    for (int j = 0; j < layerProperties.getInputCount(); j++) {
-		        rowOfCorrections.setEntry(j, input.getEntry(j) * deriativeValues.getEntry(i) * errors.getEntry(i));
-		    }
-		    corrections.setRowVector(i, rowOfCorrections);
+		    RealVector rowOfCorrections = input.mapMultiply(deriativeValues.getEntry(i)).mapMultiply(errors.getEntry(i));
+
+		    correctionsForWeights.setRowVector(i, rowOfCorrections);
 		}
+		corrections.setSubMatrix(correctionsForWeights.getData(), 0, 0);
 		
 		RealVector correctionsForBiases = deriativeValues.ebeMultiply(errors);
 		corrections.setColumnVector(layerProperties.getInputCount(), correctionsForBiases); // set bias correction in last column
@@ -50,36 +52,14 @@ public class NeuralLayer {
 		return corrections;
 	}
 	
-	public RealVector calculateErrorsForPreviousLayer(RealVector input, RealVector errors) {
-	    /*
-		RealVector weightedValues = calculateSum(input);
-        RealVector deriativeValues = layerProperties.getActivationFunction().deriativeValue(weightedValues);
-        
-        RealMatrix errorsInMatrix = new Array2DRowRealMatrix(errors.ebeMultiply(deriativeValues).toArray());
-        RealMatrix errorsForPreviousLayer = new Array2DRowRealMatrix(weights.getRowDimension(), 
-                                                                     weights.getColumnDimension());
-        
-        for (int i = 0; i < errorsInMatrix.getRowDimension(); i++) {
-            errorsForPreviousLayer.setRowVector(i, weights.getRowVector(i).mapMultiplyToSelf(errorsInMatrix.getEntry(i, 0)));
-        }
-		*/
+	public RealVector calculateErrorsForPreviousLayer(RealVector errors) {
+	    RealMatrix weightsTransposed = weights.transpose();
+	    RealMatrix errorsInMatrix = new Array2DRowRealMatrix(errors.toArray());
+	    RealMatrix errorsForPreviousLayer = weightsTransposed.multiply(errorsInMatrix);
 	    
-	    /*
-	    RealMatrix errorsForPreviousLayer = new Array2DRowRealMatrix(weights.getRowDimension(), 
-                                                                     weights.getColumnDimension());
-	    RealVector weightSumInRows = new ArrayRealVector(weights.getRowDimension());
-        for (int i = 0; i < weightSumInRows.getDimension(); i++) {
-            weightSumInRows.setEntry(i, weights.getRowVector(i).getL1Norm());
-        }
+	    RealVector vectorWithErrorsForPreviousLayer = errorsForPreviousLayer.getColumnVector(0); // just converting to vector
 	    
-        for (int i = 0; i < weightSumInRows.getDimension(); i++) {
-            errorsForPreviousLayer.setRowVector(i, weights.getRowVector(i).mapMultiplyToSelf(errors.getEntry(i) / weightSumInRows.getEntry(i)));
-        }
-        */
-	    
-		//return concentrateErrors(errorsForPreviousLayer);
-	    
-	    return weights.transpose().multiply(new Array2DRowRealMatrix(errors.toArray())).getColumnVector(0);
+	    return vectorWithErrorsForPreviousLayer;
 	}
 	
 	public RealVector calculateSum(RealVector inputValues) {
@@ -95,9 +75,9 @@ public class NeuralLayer {
 	        corrections = corrections.add(previousWeightChange.scalarMultiply(layerProperties.getInertia()));
 	    }
 	    
-		weights = weights.subtract(corrections.getSubMatrix(0, layerProperties.getNeuronCount() - 1,
+		weights = weights.add(corrections.getSubMatrix(0, layerProperties.getNeuronCount() - 1,
 		                                                   0, layerProperties.getInputCount() - 1));
-		biases = biases.subtract(corrections.getSubMatrix(0, layerProperties.getNeuronCount() - 1,
+		biases = biases.add(corrections.getSubMatrix(0, layerProperties.getNeuronCount() - 1,
 		                                                 layerProperties.getInputCount(), layerProperties.getInputCount()));
 		
 		previousWeightChange = corrections;
@@ -127,7 +107,7 @@ public class NeuralLayer {
 		
 		for (int i = 0; i < weights.getRowDimension(); i++) {
 			for (int j = 0; j < weights.getColumnDimension(); j++) {
-				double randomDouble = rand.nextDouble() * 6 - 3;
+				double randomDouble = rand.nextDouble() * 2 - 1;
 				weights.setEntry(i, j, randomDouble);
 			}
 		}
