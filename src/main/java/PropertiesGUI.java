@@ -484,6 +484,15 @@ public class PropertiesGUI extends JDialog {
             for (int i = 0; i < selectedInput.length; i++) {
                 selectedInput[i] = true;
             }
+        } else {
+            configuration.interpreter = new SelectiveDataInterpreter(selectedInput, 3);
+            int trueInputCount = 0;
+            for (int i = 0; i < selectedInput.length; i++) {
+                if (selectedInput[i]) {
+                    trueInputCount++;
+                }
+            }
+            configuration.networkProperties[0].setInputCount(trueInputCount);
         }
         
         configuration.selectedInput = selectedInput;

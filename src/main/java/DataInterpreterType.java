@@ -1,13 +1,15 @@
 
 public class DataInterpreterType {
     public enum InterpreterType {
-        StringLineWithTarget
+        StringLineWithTarget, IdenticalOutputInterpreter
     }
     
     public static String toString(InterpreterType type) {
         switch (type) {
         case StringLineWithTarget:
             return "Wejscia i cel";
+        case IdenticalOutputInterpreter:
+            return "Takie samo wyjście";
         default:
             return "";
         }
@@ -17,6 +19,8 @@ public class DataInterpreterType {
         switch (type) {
         case StringLineWithTarget:
             return new StringLineWithTargetInterpreter(3);
+        case IdenticalOutputInterpreter:
+            return new IdenticalOutputInterpreter();
         default:
             return null;
         }

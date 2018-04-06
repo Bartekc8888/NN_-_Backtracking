@@ -20,6 +20,10 @@ public class NeuralLayerProperties {
 	public int getInputCount() {
 		return inputCount;
 	}
+	
+	public void setInputCount(int count) {
+	    inputCount = count;
+	}
 
 	public int getNeuronCount() {
 		return neuronCount;
