@@ -18,6 +18,11 @@ public class LayerConfigPanel extends JPanel {
     private static final long serialVersionUID = -8583829646754049266L;
     
     JSpinner inputCountSpinner;
+    JComboBox activationFunctionComboBox;
+    JSpinner neuronCountSpinner;
+    JTextField learningRateField;
+    JTextField inertiaField;
+    JCheckBox biasCheckbox;
     
     public LayerConfigPanel() {
         setLayout(new GridLayout(0, 2, 0, 0));
@@ -31,7 +36,7 @@ public class LayerConfigPanel extends JPanel {
             functionTypeList.add(ActivationFunctionType.toString(type));
         }
         
-        JComboBox activationFunctionComboBox = new JComboBox(functionTypeList.toArray());
+        activationFunctionComboBox = new JComboBox(functionTypeList.toArray());
         add(activationFunctionComboBox);
         
         JLabel inputCountLabel = new JLabel("Liczba wejść:");
@@ -46,7 +51,7 @@ public class LayerConfigPanel extends JPanel {
         neuronCountLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
         add(neuronCountLabel);
         
-        JSpinner neuronCountSpinner = new JSpinner();
+        neuronCountSpinner = new JSpinner();
         neuronCountSpinner.setModel(new SpinnerNumberModel(new Integer(1), new Integer(1), null, new Integer(1)));
         add(neuronCountSpinner);
         
@@ -54,7 +59,7 @@ public class LayerConfigPanel extends JPanel {
         learningRateLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
         add(learningRateLabel);
         
-        JTextField learningRateField = new JTextField();
+        learningRateField = new JTextField();
         learningRateField.setText("0.1");
         learningRateField.setHorizontalAlignment(JTextField.RIGHT);
         learningRateField.setFont(new Font("Tahoma", Font.PLAIN, 14));
@@ -79,7 +84,7 @@ public class LayerConfigPanel extends JPanel {
         inertiaLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
         add(inertiaLabel);
         
-        JTextField inertiaField = new JTextField();
+        inertiaField = new JTextField();
         inertiaField.setText("0.2");
         inertiaField.setHorizontalAlignment(JTextField.RIGHT);
         inertiaField.setFont(new Font("Tahoma", Font.PLAIN, 14));
@@ -104,7 +109,7 @@ public class LayerConfigPanel extends JPanel {
         biasLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
         add(biasLabel);
         
-        JCheckBox biasCheckbox = new JCheckBox("");
+        biasCheckbox = new JCheckBox("");
         biasCheckbox.setSelected(true);
         add(biasCheckbox);
     }
@@ -112,7 +117,24 @@ public class LayerConfigPanel extends JPanel {
     public int getInputCount() {
         return (Integer) inputCountSpinner.getValue();
     }
-
+    
+    public NeuralLayerProperties getLayerProperties() {
+        int inputCount = (Integer) inputCountSpinner.getValue();
+        int neuronCount = (Integer) neuronCountSpinner.getValue();
+        
+        double learningRate = Double.parseDouble(learningRateField.getText());
+        double inertia = Double.parseDouble(inertiaField.getText());
+        boolean isUsingBias = biasCheckbox.isSelected();
+        
+        ActivationFunctionType.FunctionType type = ActivationFunctionType.FunctionType.values()[activationFunctionComboBox.getSelectedIndex()];
+        ActivationFunction function = ActivationFunctionType.getFunction(type);
+        
+        NeuralLayerProperties properties = new NeuralLayerProperties(inputCount, neuronCount, learningRate,
+                                                                     inertia, isUsingBias, function);
+        
+        return properties;
+    }
+    
     private void onTextFieldChanged(DocumentEvent event, JTextField field) {
         try {
             Double.parseDouble(field.getText());

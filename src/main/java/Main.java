@@ -1,4 +1,3 @@
-import java.io.IOException;
 import java.util.List;
 
 import javax.swing.JDialog;
@@ -14,18 +13,23 @@ public class Main {
             dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
             dialog.setVisible(true);
             
-			DataLoader loader = new DataLoader("C:\\Users\\barte\\Desktop\\classTrain.txt", classificationInterpreter);
-			List<DataContainer> data = loader.getLoadedData();
-			
-			NeuralLayerProperties[] networkProperties = new NeuralLayerProperties[2];
-			networkProperties[0] = new NeuralLayerProperties(4, 4, 0.2, 0.2, new SigmoidFunction());
-			networkProperties[1] = new NeuralLayerProperties(4, 3, 0.2, 0.2, new SigmoidFunction());
-			
-			NeuralManager manager = new NeuralManager(networkProperties);
-			
-			RealMatrix[] learnedParameters = manager.learn(data, 500_000, 0.01);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static void setupAndStartNetwork(NetworkConfiguration config) {
+	        try {
+	            DataLoader trainingLoader = new DataLoader(config.trainingPath, config.interpreter);
+	            List<DataContainer> trainingData = trainingLoader.getLoadedData();
+	            DataLoader testingLoader = new DataLoader(config.testingPath, config.interpreter);
+                List<DataContainer> testingData = testingLoader.getLoadedData();
+	            
+	            NeuralManager manager = new NeuralManager(config.networkProperties);
+	            
+	            RealMatrix[] learnedParameters = manager.learn(trainingData, config.epochLimit, config.errorLimit);
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
 	}
 }

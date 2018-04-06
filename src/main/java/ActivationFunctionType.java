@@ -14,4 +14,15 @@ public class ActivationFunctionType {
             return "";
         }
     }
+    
+    public static ActivationFunction getFunction(FunctionType type) {
+        switch (type) {
+        case Sigmoid:
+            return new SigmoidFunction();
+        case Linear:
+            return new LinearFunction();
+        default:
+            return null;
+        }
+    }
 }

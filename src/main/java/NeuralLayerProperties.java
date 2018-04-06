@@ -4,15 +4,17 @@ public class NeuralLayerProperties {
 	private int neuronCount;
 	private double learningRate;
 	private double inertialInfluence;
-	private ActivationFunction activationFunction;
+	private boolean isBiasUsed;
+    private ActivationFunction activationFunction;
 	
 	public NeuralLayerProperties(int numberOfInputs, int numberOfNeurons, double learningRate, 
-	                            double inertia, ActivationFunction function) {
+	                            double inertia, boolean biasUsage, ActivationFunction function) {
 		inputCount = numberOfInputs;
 		neuronCount = numberOfNeurons;
 		this.learningRate = learningRate;
 		inertialInfluence = inertia;
 		activationFunction = function;
+		isBiasUsed = biasUsage;
 	}
 
 	public int getInputCount() {
@@ -31,7 +33,12 @@ public class NeuralLayerProperties {
 	    return inertialInfluence;
 	}
 	
+	public boolean getIsBiasUsed() {
+	    return isBiasUsed;
+	}
+	
 	public ActivationFunction getActivationFunction() {
 		return activationFunction;
 	}
+	
 }

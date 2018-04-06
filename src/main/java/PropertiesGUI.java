@@ -3,11 +3,14 @@ import java.awt.FlowLayout;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
 import java.awt.Font;
 import javax.swing.SpringLayout;
 import javax.swing.BoxLayout;
@@ -22,6 +25,7 @@ import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.layout.ColumnSpec;
 import com.jgoodies.forms.layout.FormSpecs;
 import com.jgoodies.forms.layout.RowSpec;
+
 import javax.swing.SwingConstants;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
@@ -33,10 +37,13 @@ import javax.swing.JScrollPane;
 import java.awt.ScrollPane;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import javax.swing.JCheckBox;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 public class PropertiesGUI extends JDialog {
     private static final long serialVersionUID = -5163874795786648155L;
@@ -45,17 +52,22 @@ public class PropertiesGUI extends JDialog {
     private JTextField trainPathField;
     private JTextField testPathField;
 
-    
     private JPanel layerConfigsPanel;
     private JPanel inputChooserPanel;
     List<LayerConfigPanel> configPanels = new ArrayList<LayerConfigPanel>();
     List<JCheckBox> inputCheckBoxes = new ArrayList<JCheckBox>();
     private JTextField errorLimitField;
+    private JSpinner epochLimitSpinner;
+    private JComboBox interpreterComboBox;
+    
+    private final JFileChooser fileChooser = new JFileChooser();
     
     /**
      * Create the dialog.
      */
     public PropertiesGUI() {
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         setTitle("Konfiguracja sieci neuronowej");
         setBounds(100, 100, 500, 350);
@@ -109,6 +121,11 @@ public class PropertiesGUI extends JDialog {
             trainPathField.setColumns(10);
             
             JButton trainPathButton = new JButton("...");
+            trainPathButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    onTrainingFilePathButtonClicked(e);
+                }
+            });
             GridBagConstraints gbc_trainPathButton = new GridBagConstraints();
             gbc_trainPathButton.fill = GridBagConstraints.HORIZONTAL;
             gbc_trainPathButton.gridwidth = -1;
@@ -154,6 +171,11 @@ public class PropertiesGUI extends JDialog {
             contentPanel.add(filePathPanel, gbc_filePathPanel);
             
             JButton testPathButton = new JButton("...");
+            testPathButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    onTestFilePathButtonClicked(e);
+                }
+            });
             GridBagConstraints gbc_testPathButton = new GridBagConstraints();
             gbc_testPathButton.fill = GridBagConstraints.HORIZONTAL;
             gbc_testPathButton.gridwidth = -1;
@@ -259,8 +281,8 @@ public class PropertiesGUI extends JDialog {
             gbc_epochLimitLabel.gridy = 0;
             layerCountPanel.add(epochLimitLabel, gbc_epochLimitLabel);
             
-            JSpinner epochLimitSpinner = new JSpinner();
-            epochLimitSpinner.setModel(new SpinnerNumberModel(new Integer(100), new Integer(1), null, new Integer(1000)));
+            epochLimitSpinner = new JSpinner();
+            epochLimitSpinner.setModel(new SpinnerNumberModel(new Integer(10000), new Integer(1), null, new Integer(1000)));
             GridBagConstraints gbc_epochLimitSpinner = new GridBagConstraints();
             gbc_epochLimitSpinner.insets = new Insets(0, 5, 0, 5);
             gbc_epochLimitSpinner.fill = GridBagConstraints.HORIZONTAL;
@@ -303,9 +325,9 @@ public class PropertiesGUI extends JDialog {
             gbc_inputChooserPanel.gridy = 2;
             contentPanel.add(inputChooserPanel, gbc_inputChooserPanel);
             GridBagLayout gbl_inputChooserPanel = new GridBagLayout();
-            gbl_inputChooserPanel.columnWidths = new int[] {30, 30, 30};
+            gbl_inputChooserPanel.columnWidths = new int[] {30, 30, 0, 30};
             gbl_inputChooserPanel.rowHeights = new int[] {30, 30, 30};
-            gbl_inputChooserPanel.columnWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
+            gbl_inputChooserPanel.columnWeights = new double[]{0.0, 0.0, 1.0, Double.MIN_VALUE};
             gbl_inputChooserPanel.rowWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
             inputChooserPanel.setLayout(gbl_inputChooserPanel);
             
@@ -325,16 +347,48 @@ public class PropertiesGUI extends JDialog {
             gbc_specialInputCheckBox.gridy = 0;
             inputChooserPanel.add(specialInputCheckBox, gbc_specialInputCheckBox);
             
+            JLabel interpreterLabel = new JLabel("Interpreter: ");
+            interpreterLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
+            GridBagConstraints gbc_interpreterLabel = new GridBagConstraints();
+            gbc_interpreterLabel.anchor = GridBagConstraints.EAST;
+            gbc_interpreterLabel.insets = new Insets(0, 0, 5, 5);
+            gbc_interpreterLabel.gridx = 1;
+            gbc_interpreterLabel.gridy = 0;
+            inputChooserPanel.add(interpreterLabel, gbc_interpreterLabel);
+            
+            List<String> functionTypeList = new ArrayList<String>();
+            for (DataInterpreterType.InterpreterType type : DataInterpreterType.InterpreterType.values()) {
+                functionTypeList.add(DataInterpreterType.toString(type));
+            }
+            
+            interpreterComboBox = new JComboBox(functionTypeList.toArray());
+            GridBagConstraints gbc_interpreterComboBox = new GridBagConstraints();
+            gbc_interpreterComboBox.insets = new Insets(0, 0, 5, 0);
+            gbc_interpreterComboBox.fill = GridBagConstraints.HORIZONTAL;
+            gbc_interpreterComboBox.gridx = 2;
+            gbc_interpreterComboBox.gridy = 0;
+            inputChooserPanel.add(interpreterComboBox, gbc_interpreterComboBox);
+            
             
             
             {
                 JButton okButton = new JButton("OK");
+                okButton.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        onOkButtonClicked(e);
+                    }
+                });
                 okButton.setActionCommand("OK");
                 buttonPane.add(okButton);
                 getRootPane().setDefaultButton(okButton);
             }
             {
                 JButton cancelButton = new JButton("Anuluj");
+                cancelButton.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        onCancelButtonClicked(e);
+                    }
+                });
                 cancelButton.setActionCommand("Cancel");
                 buttonPane.add(cancelButton);
             }
@@ -395,5 +449,62 @@ public class PropertiesGUI extends JDialog {
         
         revalidate();
         repaint();
+    }
+    
+    private void onOkButtonClicked(ActionEvent e) {
+        NetworkConfiguration configuration = new NetworkConfiguration();
+        
+        if (trainPathField.getText().isEmpty() || testPathField.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Ścieżka pliku nie może być pusta", 
+                                          "Ścieżka pliku", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        configuration.trainingPath = trainPathField.getText();
+        configuration.testingPath = testPathField.getText();
+        
+        configuration.errorLimit = Double.parseDouble(errorLimitField.getText());
+        configuration.epochLimit = (Integer) epochLimitSpinner.getValue();
+        
+        List<NeuralLayerProperties> networkProperties = new ArrayList<NeuralLayerProperties>();
+        for (LayerConfigPanel panel : configPanels ) {
+            networkProperties.add(panel.getLayerProperties());
+        }
+        configuration.networkProperties = networkProperties.toArray(new NeuralLayerProperties[networkProperties.size()]);
+        
+        DataInterpreterType.InterpreterType type = DataInterpreterType.InterpreterType.values()[interpreterComboBox.getSelectedIndex()];
+        DataInterpreter function = DataInterpreterType.getInterpreter(type);
+        configuration.interpreter = function;
+        
+        boolean[] selectedInput = new boolean[inputCheckBoxes.size()];
+        for (int i = 0; i < inputCheckBoxes.size(); i++) {
+            selectedInput[i] = inputCheckBoxes.get(i).isSelected();
+        }
+        if (selectedInput.length == 0) {
+            selectedInput = new boolean[configPanels.get(0).getInputCount()];
+            for (int i = 0; i < selectedInput.length; i++) {
+                selectedInput[i] = true;
+            }
+        }
+        
+        configuration.selectedInput = selectedInput;
+        
+        dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+        Main.setupAndStartNetwork(configuration);
+    }
+    
+    private void onCancelButtonClicked(ActionEvent e) {
+        dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+    }
+    
+    private void onTrainingFilePathButtonClicked(ActionEvent e) {
+        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            trainPathField.setText(fileChooser.getSelectedFile().getPath());
+        }
+    }
+    
+    private void onTestFilePathButtonClicked(ActionEvent e) {
+        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            testPathField.setText(fileChooser.getSelectedFile().getPath());
+        }
     }
 }
