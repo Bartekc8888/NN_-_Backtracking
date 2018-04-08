@@ -1,14 +1,18 @@
 
 public class SelectiveDataInterpreter implements DataInterpreter {
     private boolean[] chosenInputs;
-    int targetCount;
-    
+    private int targetCount;
+    private int numberOfInputs;
     public SelectiveDataInterpreter(boolean[] whichInputsToLoad, int outputTargetCount) {
         chosenInputs = whichInputsToLoad;
         targetCount = outputTargetCount;
     }
-    
-    
+
+    public int getNumberOfInputs(){
+        return numberOfInputs;
+    }
+
+
     @Override
     public DataContainer interpretString(String lineWithData) {
         String[] splitData = lineWithData.split("\\s+"); // split by white space
@@ -23,6 +27,7 @@ public class SelectiveDataInterpreter implements DataInterpreter {
                 trueInputCount++;
             }
         }
+        numberOfInputs = trueInputCount;
         double[] data = new double[trueInputCount];
         double[] target = new double[targetCount];
         

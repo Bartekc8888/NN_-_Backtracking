@@ -1,16 +1,18 @@
-
+//Takie samo wyjscie
 public class IdenticalOutputInterpreter implements DataInterpreter {
 
     @Override
     public DataContainer interpretString(String lineWithData) {
         String[] splitData = lineWithData.split("\\s+"); // split by white space
         
-        double[] data = new double[splitData.length - 1];
+        double[] data = new double[splitData.length];
         double[] target;
         
-        for (int i = 0; i < splitData.length - 1; i++) {
+        for (int i = 0; i < splitData.length; i++) {
             data[i] = Double.parseDouble(splitData[i]);
+            System.out.print(data[i] + " ");
         }
+        System.out.println();
         
         target = data.clone();
         

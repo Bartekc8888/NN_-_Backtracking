@@ -1,4 +1,4 @@
-
+//Wejscia i cel
 public class StringLineWithTargetInterpreter implements DataInterpreter {
 	int targetCount;
 	
