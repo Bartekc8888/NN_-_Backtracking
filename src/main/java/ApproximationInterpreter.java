@@ -7,7 +7,7 @@ public class ApproximationInterpreter implements DataInterpreter {
         double[] target = new double[1];
         data[0] = Double.parseDouble(splitData[0]);
         target[0] = Double.parseDouble(splitData[1]);
-        System.out.println(data[0] + " " + target[0]);
+
         return new DataContainer(data, target);
     }
 }

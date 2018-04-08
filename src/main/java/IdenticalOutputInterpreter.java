@@ -10,9 +10,7 @@ public class IdenticalOutputInterpreter implements DataInterpreter {
         
         for (int i = 0; i < splitData.length; i++) {
             data[i] = Double.parseDouble(splitData[i]);
-            System.out.print(data[i] + " ");
         }
-        System.out.println();
         
         target = data.clone();
         

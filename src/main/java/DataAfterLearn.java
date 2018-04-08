@@ -25,6 +25,10 @@ public class DataAfterLearn {
     public RealVector[] getOutputVectors() {
         return outputVectors;
     }
+    
+    public Map<Integer, Double> getErrorData() {
+        return errorData;
+    }
 
     public void toFile(DataInterpreter interpreter, boolean trainingData) throws IOException {
         if (!(new File("wyniki").exists())) {
@@ -68,10 +72,10 @@ public class DataAfterLearn {
                 
                 double max = con[i][4];
                 outputAfterApproximation[i][0] = 1.0;
-                for (int j = 5; j <= 7; j++) {
-                    if (con[i][j] > max) {
+                for (int j = 4; j < 8; j++) {
+                    if (con[i][j] >= max) {
                         max = con[i][j];
-                        for (int k = 0; j < data.size(); k++) {
+                        for (int k = 0; k < data.size(); k++) {
                             outputAfterApproximation[i][k] = 0.0;
                         }
                         outputAfterApproximation[i][j - 4] = 1.0;
@@ -98,11 +102,6 @@ public class DataAfterLearn {
 
             System.out.println("Wyniki zapisano do pliku " + filepath);
         }
-    }
-
-    public void plot(){
-        PlotFrame errorPlot = new PlotFrame("Wykres błędu");
-        errorPlot.plotError(errorData);
     }
     
     public static int[][] getClassificationCorrectnessTable(DataContainer[] dataWithTarget, RealVector[] output) {

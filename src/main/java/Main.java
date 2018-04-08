@@ -22,26 +22,9 @@ public class Main {
             DataLoader testingLoader = new DataLoader(config.testingPath, config.interpreter);
             List<DataContainer> testingData = testingLoader.getLoadedData();
 
-            NeuralManager manager = new NeuralManager(config.networkProperties);
+            NeuralManager manager = new NeuralManager(config, true, true);
 
-            DataAfterLearn learNN = manager.learn(trainingData, config.epochLimit, config.errorLimit);
-            if (!(config.interpreter instanceof ApproximationInterpreter)) {
-                learNN.toFile(config.interpreter, true);
-                learNN.plot();
-            } else {
-                PlotFrame plot = new PlotFrame("Po nauce",learNN);
-                plot.plotFrame();
-                learNN.plot();
-            }
-            
-            DataAfterLearn testNN = manager.test(testingData);
-            if ((!(config.interpreter instanceof IdenticalOutputInterpreter)) && 
-                    (!(config.interpreter instanceof ApproximationInterpreter))) {
-                testNN.toFile(config.interpreter, false);
-            } else if (config.interpreter instanceof ApproximationInterpreter) {
-                PlotFrame plot = new PlotFrame("Po testach",testNN);
-                plot.plotFrame();
-            }
+            manager.learn(trainingData, testingData, config.epochLimit, config.errorLimit);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -1,84 +1,52 @@
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+
+import javax.swing.SwingWorker;
 
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.util.Pair;
 
-public class NeuralManager {
+public class NeuralManager extends SwingWorker<DataAfterLearn, Pair<Double, Double>> {
     private NeuralNetwork network;
     private boolean calculatePercent = false;
 
-    public NeuralManager(NeuralLayerProperties[] networkProperties) {
-        network = new NeuralNetwork(networkProperties);
-        if (networkProperties[networkProperties.length - 1].getNeuronCount() == 3) {
+    NetworkConfiguration currentConfig;
+    List<DataContainer> dataCopy;
+    List<DataContainer> currentTestingData;
+    int epochLimit; 
+    double errorLimit;
+    PlotFrame plotForTrainingErrors;
+    PlotFrame plotForTestErrors;
+    
+    boolean drawErrorOnTrain;
+    boolean drawErrorOnTest;
+    
+    public NeuralManager(NetworkConfiguration config, boolean drawErrorOnTrain, boolean drawErrorOnTest) {
+        network = new NeuralNetwork(config.networkProperties);
+        currentConfig = config;
+        if (config.networkProperties[config.networkProperties.length - 1].getNeuronCount() == 3) {
             calculatePercent = true;
         }
+        
+        this.drawErrorOnTrain = drawErrorOnTrain;
+        this.drawErrorOnTest = drawErrorOnTest;
     }
 
     public void initWeights(RealMatrix[] parameters) { // use this to setup parameters learned earlier
         //TODO
     }
 
-    public DataAfterLearn learn(List<DataContainer> data, int epochLimit, double errorLimit) {
-        List<DataContainer> dataCopy = new ArrayList<DataContainer>(data);
-        Map<Integer, Double> errorData = new HashMap<Integer, Double>();
-        RealVector outputVector;
-        RealVector[] allOutputVectors = new RealVector[dataCopy.size()];
+    public void learn(List<DataContainer> data, List<DataContainer> testingData, int epochLimit, double errorLimit) throws Exception {
+        dataCopy = new ArrayList<DataContainer>(data);
+        currentTestingData = new ArrayList<DataContainer>(testingData);
+        this.epochLimit = epochLimit;
+        this.errorLimit = errorLimit;
+        plotForTrainingErrors = new PlotFrame("Błąd sieci dla danych treningowych");
+        plotForTestErrors = new PlotFrame("Błąd sieci dla danych testowych");
         
-        double errorAfterEpoch = 0;
-        int currentEpoch = 0;
-        while (currentEpoch < epochLimit) {
-            Collections.shuffle(dataCopy);
-            RealMatrix[] correctionsAccumulator = new RealMatrix[network.getLayerCount()];
-            
-            double errorAccumulator = 0;
-            int j = 0;
-            for (DataContainer dataBit : dataCopy) {
-                outputVector = network.calculateOutput(dataBit.getData());
-                allOutputVectors[j] = outputVector;
-                j++;
-                
-                if (dataBit.getTarget() != null) {
-                    RealVector errorVector = dataBit.getTarget().subtract(outputVector);
-                    RealMatrix[] corrections = network.calculateCorrections(dataBit.getData(), errorVector);
-
-                    errorVector = errorVector.ebeMultiply(errorVector);
-                    errorVector = errorVector.mapDivide(2);
-                    errorAccumulator += errorVector.getL1Norm();
-                    
-                    if (corrections.length == correctionsAccumulator.length) {
-                        for (int i = 0; i < correctionsAccumulator.length; i++) {
-                            if (correctionsAccumulator[i] != null) {
-                                correctionsAccumulator[i] = correctionsAccumulator[i].add(corrections[i]);
-                            } else {
-                                correctionsAccumulator[i] = corrections[i];
-                            }
-                        }
-                    } else {
-                        throw new UnsupportedOperationException("Corrections dimensions don't match");
-                    }
-                }
-            }
-            if (calculatePercent) {
-                calculatePercentOfCorrectAnswers(dataCopy, allOutputVectors, currentEpoch);
-            }
-            
-            errorAfterEpoch = errorAccumulator / dataCopy.size(); // divide to get average error on all samples
-            errorData.put(currentEpoch, errorAfterEpoch);
-            if (errorAfterEpoch < errorLimit) {
-                return new DataAfterLearn(dataCopy, allOutputVectors, errorData);
-            }
-
-            for (int i = 0; i < correctionsAccumulator.length; i++) {
-                correctionsAccumulator[i] = correctionsAccumulator[i].scalarMultiply(1.d / dataCopy.size());
-            }
-
-            network.applyCorrections(correctionsAccumulator);
-
-            currentEpoch++;
-
-        }
-        return new DataAfterLearn(dataCopy, allOutputVectors, errorData);
+        execute(); // execute doInBackground function on another thread
     }
 
     public DataAfterLearn test(List<DataContainer> data) {
@@ -133,14 +101,124 @@ public class NeuralManager {
                            "% GR3: " + new DecimalFormat("#000.00").format(percent[2]) + "%");
     }
 
-    public RealVector[] processData(List<DataContainer> data) {
-        RealVector[] output = new RealVector[data.size()];
-        //TODO
-        return output;
+    public double calculateErrorOverDataRange(List<DataContainer> data) {
+        List<DataContainer> dataCopy = new ArrayList<DataContainer>(data);
+        RealVector outputVector;
+        double errorAccumulator = 0.0;
+        
+        for (DataContainer dataBit : dataCopy) {
+            outputVector = network.calculateOutput(dataBit.getData());
+            
+            RealVector errorVector = dataBit.getTarget().subtract(outputVector);
+            errorVector = errorVector.ebeMultiply(errorVector);
+            errorVector = errorVector.mapDivide(2);
+            errorAccumulator += errorVector.getL1Norm();
+        }
+        
+        double errorOnDataRange = errorAccumulator / dataCopy.size();
+        return errorOnDataRange;
     }
 
-    public void calculateErrorOverDataRange(List<DataContainer> data) {
-        // calculating error on test data
-        //TODO
+    @Override
+    protected DataAfterLearn doInBackground() throws Exception {
+        Map<Integer, Double> errorData = new HashMap<Integer, Double>();
+        RealVector outputVector;
+        RealVector[] allOutputVectors = new RealVector[dataCopy.size()];
+        
+        double errorAfterEpoch = 0;
+        int currentEpoch = 0;
+        while (currentEpoch < epochLimit) {
+            Collections.shuffle(dataCopy);
+            RealMatrix[] correctionsAccumulator = new RealMatrix[network.getLayerCount()];
+            
+            double errorAccumulator = 0;
+            int j = 0;
+            for (DataContainer dataBit : dataCopy) {
+                outputVector = network.calculateOutput(dataBit.getData());
+                allOutputVectors[j] = outputVector;
+                j++;
+                
+                if (dataBit.getTarget() != null) {
+                    RealVector errorVector = dataBit.getTarget().subtract(outputVector);
+                    RealMatrix[] corrections = network.calculateCorrections(dataBit.getData(), errorVector);
+
+                    errorVector = errorVector.ebeMultiply(errorVector);
+                    errorVector = errorVector.mapDivide(2);
+                    errorAccumulator += errorVector.getL1Norm();
+                    
+                    if (corrections.length == correctionsAccumulator.length) {
+                        for (int i = 0; i < correctionsAccumulator.length; i++) {
+                            if (correctionsAccumulator[i] != null) {
+                                correctionsAccumulator[i] = correctionsAccumulator[i].add(corrections[i]);
+                            } else {
+                                correctionsAccumulator[i] = corrections[i];
+                            }
+                        }
+                    } else {
+                        throw new UnsupportedOperationException("Corrections dimensions don't match");
+                    }
+                }
+            }
+            if (calculatePercent) {
+                calculatePercentOfCorrectAnswers(dataCopy, allOutputVectors, currentEpoch);
+            }
+            
+            errorAfterEpoch = errorAccumulator / dataCopy.size(); // divide to get average error on all samples
+            
+            Double errorOnTest = null;
+            if (drawErrorOnTest) {
+                errorOnTest = calculateErrorOverDataRange(currentTestingData);
+            }
+            Pair<Double, Double> errorOnTrainAndTest = new Pair<Double, Double>(errorAfterEpoch, errorOnTest);
+            publish(errorOnTrainAndTest);
+            
+            errorData.put(currentEpoch, errorAfterEpoch);
+            if (errorAfterEpoch < errorLimit) {
+                return new DataAfterLearn(dataCopy, allOutputVectors, errorData);
+            }
+
+            for (int i = 0; i < correctionsAccumulator.length; i++) {
+                correctionsAccumulator[i] = correctionsAccumulator[i].scalarMultiply(1.d / dataCopy.size());
+            }
+
+            network.applyCorrections(correctionsAccumulator);
+            currentEpoch++;
+        }
+        
+        return new DataAfterLearn(dataCopy, allOutputVectors, errorData);
+    }
+    
+    @Override
+    protected void process(List<Pair<Double, Double>> chunks) {
+        for (Pair<Double, Double> error : chunks) {
+            if (drawErrorOnTrain) {
+                plotForTrainingErrors.addDataErrorToPlot(error.getFirst());
+            }
+            
+            if (drawErrorOnTest) {
+                plotForTestErrors.addDataErrorToPlot(error.getSecond());
+            }
+        }
+    }
+    
+    @Override
+    protected void done() {
+        try {
+            DataAfterLearn learNN = get();
+            if (!(currentConfig.interpreter instanceof ApproximationInterpreter)) {
+                learNN.toFile(currentConfig.interpreter, true);
+            } else {
+                PlotFrame plot = new PlotFrame("Po nauce");
+                plot.plotFrame(learNN);
+            }
+            
+            if ((!(currentConfig.interpreter instanceof IdenticalOutputInterpreter)) && 
+                    (!(currentConfig.interpreter instanceof ApproximationInterpreter))) {
+                DataAfterLearn testNN = test(currentTestingData);
+                testNN.toFile(currentConfig.interpreter, false);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
