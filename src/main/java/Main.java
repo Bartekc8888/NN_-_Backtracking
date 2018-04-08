@@ -33,8 +33,10 @@ public class Main {
                 plot.plotFrame();
                 learNN.plot();
             }
+            
             DataAfterLearn testNN = manager.test(testingData);
-            if ((!(config.interpreter instanceof IdenticalOutputInterpreter)) && (!(config.interpreter instanceof ApproximationInterpreter))) {
+            if ((!(config.interpreter instanceof IdenticalOutputInterpreter)) && 
+                    (!(config.interpreter instanceof ApproximationInterpreter))) {
                 testNN.toFile(config.interpreter, false);
             } else if (config.interpreter instanceof ApproximationInterpreter) {
                 PlotFrame plot = new PlotFrame("Po testach",testNN);

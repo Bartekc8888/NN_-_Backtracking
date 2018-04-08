@@ -1,7 +1,6 @@
 import java.util.Random;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 
@@ -120,16 +119,4 @@ public class NeuralLayer {
 			biases.setEntry(i, 0, rand.nextDouble());
 		}
 	}
-	
-    private RealVector concentrateErrors(RealMatrix errors) {
-        RealMatrix weightErrors = errors.getSubMatrix(0, layerProperties.getNeuronCount() - 1,
-                                                      0, layerProperties.getInputCount() - 1);
-        
-        RealVector concentratedErrors = weightErrors.getRowVector(0);
-        for (int i = 1; i < weightErrors.getRowDimension(); i++) {
-            concentratedErrors = concentratedErrors.add(weightErrors.getRowVector(i));
-        }
-        
-        return concentratedErrors;
-    }
 }

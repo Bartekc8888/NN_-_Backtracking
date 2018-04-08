@@ -12,20 +12,9 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 import java.awt.Font;
-import javax.swing.SpringLayout;
-import javax.swing.BoxLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 
 import javax.swing.JTextField;
-import java.awt.GridLayout;
-import javax.swing.GroupLayout;
-import javax.swing.GroupLayout.Alignment;
-//import com.jgoodies.forms.layout.FormLayout;
-//import com.jgoodies.forms.layout.ColumnSpec;
-//import com.jgoodies.forms.layout.FormSpecs;
-//import com.jgoodies.forms.layout.RowSpec;
-
 import javax.swing.SwingConstants;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
@@ -33,13 +22,10 @@ import java.awt.Insets;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.JComboBox;
-import javax.swing.JScrollPane;
-import java.awt.ScrollPane;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import javax.swing.JCheckBox;
 import java.awt.event.ActionListener;
@@ -66,10 +52,11 @@ public class PropertiesGUI extends JDialog {
      * Create the dialog.
      */
     public PropertiesGUI() {
+        super((JDialog)null, "Konfiguracja sieci neuronowej", false); // makes it visible in taskbar
+        
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        setTitle("Konfiguracja sieci neuronowej");
         setBounds(100, 100, 500, 350);
         setMinimumSize(new Dimension(600,400));
         getContentPane().setLayout(new BorderLayout());

@@ -14,7 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 public class PlotFrame extends ApplicationFrame {
-
+    private static final long serialVersionUID = -2752385353747427641L;
+    
     private List<DataContainer> data;
     private RealVector[] outputVector;
     private String title;
@@ -57,6 +58,8 @@ public class PlotFrame extends ApplicationFrame {
                 PlotOrientation.VERTICAL,
                 true, false, false);
 
+        xylineChart.setRenderingHints(new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON));
+        
         XYPlot plot = xylineChart.getXYPlot();
         XYShapeRenderer renderer = new XYShapeRenderer();
         renderer.setSeriesPaint(0, Color.GREEN);
@@ -94,6 +97,8 @@ public class PlotFrame extends ApplicationFrame {
                 PlotOrientation.VERTICAL,
                 true, false, false);
 
+        xylineChart.setRenderingHints(new RenderingHints(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON));
+        
         XYPlot plot = xylineChart.getXYPlot();
         XYShapeRenderer renderer = new XYShapeRenderer();
         renderer.setSeriesPaint(0, Color.BLUE);
