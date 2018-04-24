@@ -11,6 +11,8 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -23,6 +25,8 @@ public class LayerConfigPanel extends JPanel {
     JTextField learningRateField;
     JTextField inertiaField;
     JCheckBox biasCheckbox;
+    
+    LayerConfigPanel nextPanel;
     
     public LayerConfigPanel() {
         setLayout(new GridLayout(0, 2, 0, 0));
@@ -53,6 +57,12 @@ public class LayerConfigPanel extends JPanel {
         
         neuronCountSpinner = new JSpinner();
         neuronCountSpinner.setModel(new SpinnerNumberModel(new Integer(1), new Integer(1), null, new Integer(1)));
+        neuronCountSpinner.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent arg0) {
+                onNeuronCountChanged(arg0);
+            }
+        });
         add(neuronCountSpinner);
         
         JLabel learningRateLabel = new JLabel("Współczynnik nauki:");
@@ -60,7 +70,7 @@ public class LayerConfigPanel extends JPanel {
         add(learningRateLabel);
         
         learningRateField = new JTextField();
-        learningRateField.setText("0.1");
+        learningRateField.setText("0.5");
         learningRateField.setHorizontalAlignment(JTextField.RIGHT);
         learningRateField.setFont(new Font("Tahoma", Font.PLAIN, 14));
         learningRateField.getDocument().addDocumentListener(new DocumentListener() {
@@ -85,7 +95,7 @@ public class LayerConfigPanel extends JPanel {
         add(inertiaLabel);
         
         inertiaField = new JTextField();
-        inertiaField.setText("0.2");
+        inertiaField.setText("0.6");
         inertiaField.setHorizontalAlignment(JTextField.RIGHT);
         inertiaField.setFont(new Font("Tahoma", Font.PLAIN, 14));
         inertiaField.getDocument().addDocumentListener(new DocumentListener() {
@@ -135,6 +145,14 @@ public class LayerConfigPanel extends JPanel {
         return properties;
     }
     
+    public void setNextPanel(LayerConfigPanel nextPanel) {
+        this.nextPanel = nextPanel;
+    }
+    
+    public void setInputCount(int inputCount) {
+        inputCountSpinner.setValue(inputCount);
+    }
+    
     private void onTextFieldChanged(DocumentEvent event, JTextField field) {
         try {
             Double.parseDouble(field.getText());
@@ -146,6 +164,12 @@ public class LayerConfigPanel extends JPanel {
                     field.setText("");
                 }
             });
+        }
+    }
+    
+    private void onNeuronCountChanged(ChangeEvent e) {
+        if (nextPanel != null) {
+            nextPanel.setInputCount((int)neuronCountSpinner.getValue());
         }
     }
 }

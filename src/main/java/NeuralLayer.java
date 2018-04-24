@@ -15,10 +15,12 @@ public class NeuralLayer {
 		weights = new Array2DRowRealMatrix(properties.getNeuronCount(), properties.getInputCount());
 		initRandomWeights();
 		
-		biases = new Array2DRowRealMatrix(properties.getNeuronCount(), 1);
-		initBiases();
-		
 		layerProperties = properties;
+		
+		if (layerProperties.getIsBiasUsed()) {
+		    biases = new Array2DRowRealMatrix(properties.getNeuronCount(), 1);
+		    initBiases();
+		}
 	}
 	
 	public RealVector calculateOutputValue(RealVector inputValues) {
@@ -63,21 +65,25 @@ public class NeuralLayer {
 	
 	public RealVector calculateSum(RealVector inputValues) {
 		RealMatrix weightedValues = weights.multiply(new Array2DRowRealMatrix(inputValues.toArray()));
-		weightedValues = weightedValues.add(biases);
+		if (layerProperties.getIsBiasUsed()) {
+		    weightedValues = weightedValues.add(biases);
+		}
 		
 		return weightedValues.getColumnVector(0);
 	}
 	
 	public void applyCorrection(RealMatrix corrections) {
-	    corrections = corrections.scalarMultiply(layerProperties.getLearningRate());
+	    corrections = corrections.scalarMultiply((layerProperties.getLearningRate()) * (1 - layerProperties.getInertia()));
 	    if (previousWeightChange != null) {
 	        corrections = corrections.add(previousWeightChange.scalarMultiply(layerProperties.getInertia()));
 	    }
 	    
 		weights = weights.add(corrections.getSubMatrix(0, layerProperties.getNeuronCount() - 1,
 		                                                   0, layerProperties.getInputCount() - 1));
-		biases = biases.add(corrections.getSubMatrix(0, layerProperties.getNeuronCount() - 1,
+		if (layerProperties.getIsBiasUsed()) {
+		    biases = biases.add(corrections.getSubMatrix(0, layerProperties.getNeuronCount() - 1,
 		                                                 layerProperties.getInputCount(), layerProperties.getInputCount()));
+		}
 		
 		previousWeightChange = corrections;
 	}
@@ -85,7 +91,10 @@ public class NeuralLayer {
 	public void setParameters(RealMatrix parameters) {
 		weights = new Array2DRowRealMatrix(parameters.getSubMatrix(0, layerProperties.getNeuronCount() - 1, 
 		                                                           0, layerProperties.getInputCount() - 1).getData());
-		biases = new Array2DRowRealMatrix(parameters.getColumnVector(layerProperties.getInputCount()).toArray());
+		
+		if (layerProperties.getIsBiasUsed()) {
+		    biases = new Array2DRowRealMatrix(parameters.getColumnVector(layerProperties.getInputCount()).toArray());
+		}
 	}
 	
 	public NeuralLayerProperties getProperties() {
@@ -96,7 +105,10 @@ public class NeuralLayer {
 		RealMatrix parameters = new Array2DRowRealMatrix(layerProperties.getNeuronCount(), layerProperties.getInputCount() + 1);
 		
 		parameters.setSubMatrix(weights.getData(), 0, 0);
-		parameters.setSubMatrix(biases.getData(), 0, layerProperties.getInputCount());
+		
+		if (layerProperties.getIsBiasUsed()) {
+		    parameters.setSubMatrix(biases.getData(), 0, layerProperties.getInputCount());
+		}
 		
 		return parameters;
 	}

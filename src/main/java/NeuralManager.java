@@ -2,6 +2,7 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
+import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
 import org.apache.commons.math3.linear.RealMatrix;
@@ -12,16 +13,17 @@ public class NeuralManager extends SwingWorker<DataAfterLearn, Pair<Double, Doub
     private NeuralNetwork network;
     private boolean calculatePercent = false;
 
-    NetworkConfiguration currentConfig;
-    List<DataContainer> dataCopy;
-    List<DataContainer> currentTestingData;
-    int epochLimit; 
-    double errorLimit;
-    PlotFrame plotForTrainingErrors;
-    PlotFrame plotForTestErrors;
+    private NetworkConfiguration currentConfig;
+    private List<DataContainer> dataCopy;
+    private List<DataContainer> currentTestingData;
+    private int epochLimit; 
+    private double errorLimit;
+    private PlotFrame plotForTrainingErrors;
+    private PlotFrame plotForTestErrors;
+    private PlotFrame afterLearning;
     
-    boolean drawErrorOnTrain;
-    boolean drawErrorOnTest;
+    private boolean drawErrorOnTrain;
+    private boolean drawErrorOnTest;
     
     public NeuralManager(NetworkConfiguration config, boolean drawErrorOnTrain, boolean drawErrorOnTest) {
         network = new NeuralNetwork(config.networkProperties);
@@ -43,8 +45,8 @@ public class NeuralManager extends SwingWorker<DataAfterLearn, Pair<Double, Doub
         currentTestingData = new ArrayList<DataContainer>(testingData);
         this.epochLimit = epochLimit;
         this.errorLimit = errorLimit;
-        plotForTrainingErrors = new PlotFrame("Błąd sieci dla danych treningowych");
-        plotForTestErrors = new PlotFrame("Błąd sieci dla danych testowych");
+        plotForTrainingErrors = new PlotFrame("Błąd sieci dla danych treningowych", this);
+        plotForTestErrors = new PlotFrame("Błąd sieci dla danych testowych", this);
         
         execute(); // execute doInBackground function on another thread
     }
@@ -127,7 +129,7 @@ public class NeuralManager extends SwingWorker<DataAfterLearn, Pair<Double, Doub
         
         double errorAfterEpoch = 0;
         int currentEpoch = 0;
-        while (currentEpoch < epochLimit) {
+        while (currentEpoch < epochLimit && !isCancelled()) {
             Collections.shuffle(dataCopy);
             RealMatrix[] correctionsAccumulator = new RealMatrix[network.getLayerCount()];
             
@@ -163,18 +165,20 @@ public class NeuralManager extends SwingWorker<DataAfterLearn, Pair<Double, Doub
                 calculatePercentOfCorrectAnswers(dataCopy, allOutputVectors, currentEpoch);
             }
             
-            errorAfterEpoch = errorAccumulator / dataCopy.size(); // divide to get average error on all samples
-            
-            Double errorOnTest = null;
-            if (drawErrorOnTest) {
-                errorOnTest = calculateErrorOverDataRange(currentTestingData);
-            }
-            Pair<Double, Double> errorOnTrainAndTest = new Pair<Double, Double>(errorAfterEpoch, errorOnTest);
-            publish(errorOnTrainAndTest);
-            
-            errorData.put(currentEpoch, errorAfterEpoch);
-            if (errorAfterEpoch < errorLimit) {
-                return new DataAfterLearn(dataCopy, allOutputVectors, errorData);
+            if (currentEpoch > 3) {
+                errorAfterEpoch = errorAccumulator / dataCopy.size(); // divide to get average error on all samples
+                
+                Double errorOnTest = null;
+                if (drawErrorOnTest) {
+                    errorOnTest = calculateErrorOverDataRange(currentTestingData);
+                }
+                Pair<Double, Double> errorOnTrainAndTest = new Pair<Double, Double>(errorAfterEpoch, errorOnTest);
+                publish(errorOnTrainAndTest);
+                
+                errorData.put(currentEpoch, errorAfterEpoch);
+                if (errorAfterEpoch < errorLimit) {
+                    return new DataAfterLearn(dataCopy, allOutputVectors, errorData);
+                }
             }
 
             for (int i = 0; i < correctionsAccumulator.length; i++) {
@@ -204,12 +208,17 @@ public class NeuralManager extends SwingWorker<DataAfterLearn, Pair<Double, Doub
     @Override
     protected void done() {
         try {
+            if (isCancelled()) {
+                cancelLearning();
+                return;
+            }
+            
             DataAfterLearn learNN = get();
             if (!(currentConfig.interpreter instanceof ApproximationInterpreter)) {
                 learNN.toFile(currentConfig.interpreter, true);
             } else {
-                PlotFrame plot = new PlotFrame("Po nauce");
-                plot.plotFrame(learNN);
+                afterLearning = new PlotFrame("Po nauce", this);
+                afterLearning.plotFrame(learNN);
             }
             
             if ((!(currentConfig.interpreter instanceof IdenticalOutputInterpreter)) && 
@@ -218,7 +227,18 @@ public class NeuralManager extends SwingWorker<DataAfterLearn, Pair<Double, Doub
                 testNN.toFile(currentConfig.interpreter, false);
             }
         } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e.getClass(), "Błąd", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
+        }
+    }
+    
+    public void cancelLearning() {
+        cancel(true);
+        plotForTrainingErrors.dispose();
+        plotForTestErrors.dispose();
+        
+        if (afterLearning != null) {
+            afterLearning.dispose();
         }
     }
 }

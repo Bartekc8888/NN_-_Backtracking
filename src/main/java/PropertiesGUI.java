@@ -30,6 +30,8 @@ import java.util.List;
 import javax.swing.JCheckBox;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.Component;
+import javax.swing.Box;
 
 public class PropertiesGUI extends JDialog {
     private static final long serialVersionUID = -5163874795786648155L;
@@ -247,7 +249,7 @@ public class PropertiesGUI extends JDialog {
             layerCountPanel.add(errorLimitLabel, gbc_errorLimitLabel);
             
             errorLimitField = new JTextField();
-            errorLimitField.setText("0.01");
+            errorLimitField.setText("0.05");
             errorLimitField.setFont(new Font("Tahoma", Font.PLAIN, 14));
             GridBagConstraints gbc_errorLimitField = new GridBagConstraints();
             gbc_errorLimitField.fill = GridBagConstraints.HORIZONTAL;
@@ -269,7 +271,7 @@ public class PropertiesGUI extends JDialog {
             layerCountPanel.add(epochLimitLabel, gbc_epochLimitLabel);
             
             epochLimitSpinner = new JSpinner();
-            epochLimitSpinner.setModel(new SpinnerNumberModel(new Integer(10000), new Integer(1), null, new Integer(1000)));
+            epochLimitSpinner.setModel(new SpinnerNumberModel(new Integer(5000), new Integer(1), null, new Integer(1000)));
             GridBagConstraints gbc_epochLimitSpinner = new GridBagConstraints();
             gbc_epochLimitSpinner.insets = new Insets(0, 5, 0, 5);
             gbc_epochLimitSpinner.fill = GridBagConstraints.HORIZONTAL;
@@ -365,6 +367,17 @@ public class PropertiesGUI extends JDialog {
                         onOkButtonClicked(e);
                     }
                 });
+                
+                JButton learnButton = new JButton("Ucz sieć");
+                learnButton.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        onLearnButtonClicked(e);
+                    }
+                });
+                buttonPane.add(learnButton);
+                
+                Component horizontalStrut = Box.createHorizontalStrut(20);
+                buttonPane.add(horizontalStrut);
                 okButton.setActionCommand("OK");
                 buttonPane.add(okButton);
                 getRootPane().setDefaultButton(okButton);
@@ -382,69 +395,13 @@ public class PropertiesGUI extends JDialog {
         }
     }
     
-    private void onLayerCountChanged(ChangeEvent e) {
-        JSpinner spinner = (JSpinner) e.getSource();
-        int value = (int)spinner.getValue();
-        
-        if (value > configPanels.size()) {
-            while (value > configPanels.size()) {
-                LayerConfigPanel layerConfig1 = new LayerConfigPanel();
-                configPanels.add(layerConfig1);
-                GridBagConstraints gbc_layerConfig1 = new GridBagConstraints();
-                gbc_layerConfig1.weighty = 0.5;
-                gbc_layerConfig1.weightx = 0.5;
-                gbc_layerConfig1.gridx = configPanels.size();
-                gbc_layerConfig1.gridy = 0;
-                
-                layerConfigsPanel.add(layerConfig1, gbc_layerConfig1);
-            }
-        } else if (value < configPanels.size()) {
-            while (value < configPanels.size()) {
-                LayerConfigPanel panel = configPanels.remove(configPanels.size() - 1);
-                layerConfigsPanel.remove(panel);
-            }
-        }
-        
-        revalidate();
-        repaint();
-    }
-    
-    private void onSpecialInputCheckBoxChanged(ItemEvent e) {
-        JCheckBox checkBox = (JCheckBox) e.getSource();
-
-        if (checkBox.isSelected()) {
-            int checkboxesCount = configPanels.get(0).getInputCount();
-            int i = 0;
-            while (i < checkboxesCount) {
-                JCheckBox chckbxWejcie = new JCheckBox("Wejście" + Integer.toString(i));
-                chckbxWejcie.setSelected(true);
-                GridBagConstraints gbc_chckbxWejcie = new GridBagConstraints();
-                gbc_chckbxWejcie.insets = new Insets(0, 0, 0, 5);
-                gbc_chckbxWejcie.gridx = i;
-                gbc_chckbxWejcie.gridy = 1;
-                inputChooserPanel.add(chckbxWejcie, gbc_chckbxWejcie);
-                inputCheckBoxes.add(chckbxWejcie);
-                
-                i++;
-            }
-        } else {
-            while (inputCheckBoxes.size() > 0) {
-                JCheckBox box = inputCheckBoxes.remove(inputCheckBoxes.size() - 1);
-                inputChooserPanel.remove(box);
-            }
-        }
-        
-        revalidate();
-        repaint();
-    }
-    
-    private void onOkButtonClicked(ActionEvent e) {
+    private NetworkConfiguration readConfiguration() {
         NetworkConfiguration configuration = new NetworkConfiguration();
         
         if (trainPathField.getText().isEmpty() || testPathField.getText().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Ścieżka pliku nie może być pusta", 
                                           "Ścieżka pliku", JOptionPane.INFORMATION_MESSAGE);
-            return;
+            return null;
         }
         configuration.trainingPath = trainPathField.getText();
         configuration.testingPath = testPathField.getText();
@@ -483,6 +440,85 @@ public class PropertiesGUI extends JDialog {
         }
         
         configuration.selectedInput = selectedInput;
+        
+        return configuration;
+    }
+    
+    private void onLayerCountChanged(ChangeEvent e) {
+        JSpinner spinner = (JSpinner) e.getSource();
+        int value = (int)spinner.getValue();
+        
+        if (value > configPanels.size()) {
+            while (value > configPanels.size()) {
+                LayerConfigPanel layerConfig1 = new LayerConfigPanel();
+                configPanels.get(configPanels.size() - 1).setNextPanel(layerConfig1);
+                configPanels.add(layerConfig1);
+                
+                GridBagConstraints gbc_layerConfig1 = new GridBagConstraints();
+                gbc_layerConfig1.weighty = 0.5;
+                gbc_layerConfig1.weightx = 0.5;
+                gbc_layerConfig1.gridx = configPanels.size();
+                gbc_layerConfig1.gridy = 0;
+                
+                layerConfigsPanel.add(layerConfig1, gbc_layerConfig1);
+            }
+        } else if (value < configPanels.size()) {
+            while (value < configPanels.size()) {
+                LayerConfigPanel panel = configPanels.remove(configPanels.size() - 1);
+                layerConfigsPanel.remove(panel);
+                configPanels.get(configPanels.size() - 1).setNextPanel(null);
+            }
+        }
+        
+        revalidate();
+        repaint();
+    }
+    
+    private void onSpecialInputCheckBoxChanged(ItemEvent e) {
+        JCheckBox checkBox = (JCheckBox) e.getSource();
+
+        if (checkBox.isSelected()) {
+            int checkboxesCount = configPanels.get(0).getInputCount();
+            int i = 0;
+            while (i < checkboxesCount) {
+                JCheckBox chckbxWejcie = new JCheckBox("Wejście" + Integer.toString(i));
+                chckbxWejcie.setSelected(true);
+                GridBagConstraints gbc_chckbxWejcie = new GridBagConstraints();
+                gbc_chckbxWejcie.insets = new Insets(0, 0, 0, 5);
+                gbc_chckbxWejcie.gridx = i;
+                gbc_chckbxWejcie.gridy = 1;
+                inputChooserPanel.add(chckbxWejcie, gbc_chckbxWejcie);
+                inputCheckBoxes.add(chckbxWejcie);
+                
+                i++;
+            }
+        } else {
+            while (inputCheckBoxes.size() > 0) {
+                JCheckBox box = inputCheckBoxes.remove(inputCheckBoxes.size() - 1);
+                inputChooserPanel.remove(box);
+            }
+        }
+        
+        revalidate();
+        repaint();
+    }
+    
+    private void onLearnButtonClicked(ActionEvent e) {
+        NetworkConfiguration configuration = readConfiguration();
+        
+        if (configuration == null) {
+            return;
+        }
+
+        Main.setupAndStartNetwork(configuration);
+    }
+    
+    private void onOkButtonClicked(ActionEvent e) {
+        NetworkConfiguration configuration = readConfiguration();
+        
+        if (configuration == null) {
+            return;
+        }
         
         dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
         Main.setupAndStartNetwork(configuration);

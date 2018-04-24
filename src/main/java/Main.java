@@ -1,6 +1,7 @@
 import java.util.List;
 
 import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 
 public class Main {
 
@@ -26,6 +27,7 @@ public class Main {
 
             manager.learn(trainingData, testingData, config.epochLimit, config.errorLimit);
         } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e.getClass(), "Błąd", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
     }

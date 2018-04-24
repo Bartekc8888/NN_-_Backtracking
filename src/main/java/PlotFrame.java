@@ -9,10 +9,14 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import java.awt.*;
+import java.awt.event.WindowEvent;
 import java.util.List;
 import java.util.Map;
 
-public class PlotFrame extends ApplicationFrame {
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+
+public class PlotFrame extends JFrame {
     private static final long serialVersionUID = -2752385353747427641L;
     
     private XYShapeRenderer renderer;
@@ -22,9 +26,16 @@ public class PlotFrame extends ApplicationFrame {
     private String title;
     private XYSeries persistentErrorSeries;
 
-    public PlotFrame(String title) {
+    public PlotFrame(String title, NeuralManager parent) {
         super(title);
         this.title = title;
+        
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent windowEvent) {
+                parent.cancelLearning();
+            }
+        });
     }
 
     public void plotFrame(DataAfterLearn networkData) {
